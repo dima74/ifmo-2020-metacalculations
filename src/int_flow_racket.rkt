@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit)
-
+(require racket/trace)
 (require "base.rkt")
 
 (define-namespace-anchor anchor)
@@ -20,7 +20,7 @@
 
 (define
   (run_block block_name blocks variables)
-  (define block (assoc block_name blocks))
+  (define block (lookup_notnull block_name blocks))
   (run_commands (tail block) blocks variables)
   )
 
@@ -42,9 +42,12 @@
   (define expr2 `(let ,assigments ,expr))
   (eval expr2 ns)
   )
+;(trace eval-with-variables)
 
 (define
   (run_commands commands blocks variables)
+  ;writeln
+  ;(writeln (list "command:" (head commands)))
   (match (head commands)
     [(list ':= variable expr) (run_commands (tail commands) blocks (update_variable variables variable (eval-with-variables expr variables)))]
     [(list 'goto label) (run_block label blocks variables)]
@@ -56,7 +59,7 @@
      ]
     ))
 
-(define find_name
+(define findname_flow
   '((read name namelist valuelist)
     (search (if (equal? name (head namelist)) found cont))
     (cont (:= valuelist (tail valuelist))
@@ -65,5 +68,9 @@
     (found (return (head valuelist)))
     ))
 
-(define test1 (int_flow_racket find_name '(y (x y z) (1 2 3))))
-(check-equal? test1 '2)
+
+(define (int_flow_racket_test)
+  (define findname_output (int_flow_racket findname_flow '(y (x y z) (1 2 3))))
+  (check-equal? findname_output '2)
+  )
+;(int_flow_racket_test)

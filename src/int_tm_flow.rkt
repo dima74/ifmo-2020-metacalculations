@@ -5,23 +5,35 @@
 (require "int_flow_racket.rkt")
 
 ; интерпретатор машины Тьюринга (на FlowChart)
+(provide int_tm_flow int_tm_flow_gen_vs)
+; (define int_tm_flow_static '(Commands CommandsTail Command CommandType CommandArguments))
+(define
+  (int_tm_flow_gen_vs Commands)
+  (list
+   (list 'Commands Commands)
+   '(CommandsTail 0)
+   '(Command 0)
+   '(CommandType 0)
+   '(CommandArguments 0)
+   '(Label 0)
+   )
+  )
 (define int_tm_flow
   '((read Commands Right)
     (init
      (:= Left '())
-     (:= I 0)
+     (:= CommandsTail Commands)
      (goto step)
      )
     (loop
-     (:= I (+ I 1))
+     (:= CommandsTail (tail CommandsTail))
      (goto step)
      )
     (step
-     ;(writeln (list I Left Right))
-     (if (equal? I (length Commands)) exit cases)
+     (if (empty? CommandsTail) exit cases)
      )
     (cases
-        (:= Command (tail (list-ref Commands I)))
+      (:= Command (tail (head CommandsTail)))  ; tail чтобы пропустить label
       (:= CommandType (head Command))
       (:= CommandArguments (tail Command))
       (goto case1)
@@ -43,23 +55,31 @@
      (goto loop)
      )
     (command-write
-     (:= Right (cons (head CommandArguments) (int_tm_flow_tail Right)))
+     (:= Right (cons (first CommandArguments) (int_tm_flow_tail Right)))
      (goto loop)
      )
     (command-goto
-     (:= I (head CommandArguments))
+     (:= Label (first CommandArguments))
+     (:= CommandsTail (int_tm_flow_lookup Commands Label))
+     (:= Label 0)  ; обнуление локальной переменной
      (goto step)
      )
     (command-if
      (if (equal? (head CommandArguments) (int_tm_flow_head Right)) command-if1 loop)
      )
     (command-if1
-     (:= I (third CommandArguments))
+     (:= Label (third CommandArguments))
+     (:= CommandsTail (int_tm_flow_lookup Commands Label))
+     (:= Label 0)  ; обнуление локальной переменной
      (goto step)
      )
     (exit (return (append (reverse Left) Right)))
     ))
 
-(define tm-example '((0 if 0 goto 3) (1 right) (2 goto 0) (3 write 1)))
-(define test2 (int_flow_racket int_tm_flow `(,tm-example (1 1 1 0 1 0 1))))
-(check-equal? test2 '(1 1 1 1 1 0 1))
+(define (int_tm_flow_test)
+  (define tm_program '((A if 0 goto D) (B right) (C goto A) (D write 1)))
+  (define tm_program_input '(1 1 1 0 1 0 1))
+  (define test (int_flow_racket int_tm_flow (list tm_program tm_program_input)))
+  (check-equal? test '(1 1 1 1 1 0 1))
+  )
+;(int_tm_flow_test)
