@@ -6,7 +6,7 @@ class Program(
 ) {
     override fun toString(): String {
         val functions = functions.entries.joinToString("\n") { "${it.key} = ${it.value}" }
-        return "$expr where\n\n$functions"
+        return "$expr where\n$functions"
     }
 }
 

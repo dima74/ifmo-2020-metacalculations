@@ -83,8 +83,7 @@ private fun doGeneralize(expr1: Expr, expr2: Expr, freshVariable: NameGenerator)
                     subst2[name2] = e2.expr2
                     expr = expr.substitute(name, Application(Variable(name1), Variable(name2)))
                 }
-                e1 is Case && e2 is Case -> {
-                    check(e1.arms.map { it.constructor } == e2.arms.map { it.constructor })
+                e1 is Case && e2 is Case && e1.arms.map { it.constructor } == e2.arms.map { it.constructor } -> {
                     val nameValue = freshVariable()
                     val nameExprs = freshVariable * e1.arms.size
                     val resultArms = mutableListOf<Arm>()
@@ -213,7 +212,7 @@ fun hasEmbeddingUsingCoupling(expr1: Expr, expr2: Expr, p: Set<Pair<String, Stri
         expr1 is Application && expr2 is Application -> {
             hasEmbedding(expr1.expr1, expr2.expr1, p) && hasEmbedding(expr1.expr2, expr2.expr2, p)
         }
-        expr1 is Case && expr2 is Case -> {
+        expr1 is Case && expr2 is Case && expr1.arms.map { it.constructor } == expr2.arms.map { it.constructor } -> {
             val valueMatches = hasEmbedding(expr1.value, expr2.value, p)
             val armsMatches = (expr1.arms zipExact expr2.arms).all { (arm1, arm2) ->
                 check(arm1.constructor == arm2.constructor)
